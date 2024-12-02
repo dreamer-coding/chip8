@@ -3,5 +3,9 @@
 
 
 void loadRom(char const *filename);
+void load_font_set();
+void printdata();
+void fetch();
+void printfetch();
 
 #endif

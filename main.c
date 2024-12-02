@@ -4,67 +4,11 @@
 
 #include "chip8.h"
 
-#define NUM_REGISTERS 16
-
-#define V0 registers[0]
-#define V1 registers[1]
-#define V2 registers[2]
-#define V3 registers[3]
-#define V4 registers[4]
-#define V5 registers[5]
-#define V6 registers[6]
-#define V7 registers[7]
-#define V8 registers[8]
-#define V9 registers[9]
-#define VA registers[10]
-#define VB registers[11]
-#define VC registers[12]
-#define VD registers[13]  
-#define VE registers[14]
-#define VF registers[15]
-
-
-const uint8_t font[80] = {
-0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-0x20, 0x60, 0x20, 0x20, 0x70, // 1
-0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-};
-
-
-uint16_t stack[16] = {0}; // 16 two-byte entries
-uint16_t START_POINT = 0xF00;
-
-
-unsigned char memory[4096] = {0};
-const unsigned int START_ADDRESS = 0x200;
-
-unsigned char *stream = &memory[START_ADDRESS];
-
-
-int main(){
+int main(int argc, char *argv[]){
     
-    loadRom("IBM Logo.ch8");
-
-	bool display[64][32];
-    char *pc;
-    uint16_t *indexRegister;
-    uint8_t delay_timer = 60;
-    uint8_t sound_timer = 0;
-    
-    uint8_t registers[NUM_REGISTERS] = {0};
-	return 0;
+    loadRom(argv[1]);
+    printdata();
+    printfetch();
+    return 0;
 }
 
