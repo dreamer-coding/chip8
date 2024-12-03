@@ -6,9 +6,6 @@
 
 int main(int argc, char *argv[]){
     
-    loadRom(argv[1]);
-    printdata();
-    printfetch();
-    return 0;
+   return 0;
 }
 
