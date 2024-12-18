@@ -1,4 +1,5 @@
 CC = gcc
-SOURCES = main.c chip8.c
+SOURCES = main.c chip8.c 
+FLAGS = `sdl2-config --cflags --libs`
 main: main.c
-	$(CC) $(SOURCES) -g -o output
+	$(CC) $(SOURCES) $(FLAGS) -g -o output
