@@ -46,24 +46,37 @@ void init_sdl(graphic_t *sdl) {
       }
     }
 
+     }
+}
+
+
+void update_screen(graphic_t *sdl,chip8_t *chip8){
+
     SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 0);
     SDL_RenderClear(sdl->renderer);
 
-    SDL_Rect r;
-    r.x = 50;
-    r.y = 50;
-    r.h = 150;
-    r.w = 150;
-
     SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
 
-    SDL_RenderFillRect(sdl->renderer, &r);
+    for(int y=0; y < 32; y++){
+        for(int x = 0; x < 64; x++){
+            if(chip8->display[x][y] == 1){
+                SDL_Rect r = { 
+                    x * 10,
+                    y * 10,
+                    10,
+                    10,
+                };
+
+                SDL_RenderFillRect(sdl->renderer, &r);
+            }
+
+        }
+    }
+
 
     SDL_RenderPresent(sdl->renderer);
-
-    SDL_Delay(500);
-  }
 }
+
 
   int destroy_sdl(graphic_t * window) {
     SDL_DestroyWindow(window->window);
@@ -71,10 +84,24 @@ void init_sdl(graphic_t *sdl) {
     return 0;
   }
 
+
+void delay_timer(){
+    static Uint64 last_time = 0;
+    Uint64 current_time = SDL_GetTicks();
+    Uint64 frame_time = 1000 / 60;
+
+    if(current_time - last_time < frame_time){
+        SDL_Delay(frame_time - (current_time - last_time));
+    }
+    last_time = SDL_GetTicks();
+
+}
+
   // Init chip8 data
  void chip8_init(chip8_t * chip8) {
     FILE *rom = fopen(chip8->rom, "rb"); // load the rom
     uint16_t entry_point = 0x200;
+    chip8->stack_ptr = chip8->stack;
 
     if (!rom) {
       fprintf(stdout, "Error Openning rom or rom file not exists %s\n",
@@ -94,7 +121,7 @@ void init_sdl(graphic_t *sdl) {
 }
 
   // Emulate the chip8 cycle
-void emulate_cycle(chip8_t * chip8) {
+void emulate_cycle(graphic_t *sdl,chip8_t * chip8) {
 
     chip8->inst.opcode =
         chip8->ram[chip8->PC] << 8 |
@@ -127,9 +154,14 @@ void emulate_cycle(chip8_t * chip8) {
       chip8->PC = chip8->inst.NNN;
       break;
     case 0x2000:
-      *(++chip8->stack_ptr) = chip8->PC;
-      chip8->PC = chip8->inst.NNN;
-      break;
+      if(chip8->stack_ptr < chip8->stack + sizeof chip8->stack -1){
+          *chip8->stack_ptr++ = chip8->PC;
+          chip8->PC = chip8->inst.NNN;
+      }
+      else{
+        printf("Stackoverflow\n"); 
+      }
+            break;
     case 0x3000:
       if (chip8->V[chip8->inst.X] == chip8->inst.NN) {
         chip8->PC += 2;
@@ -235,6 +267,7 @@ void emulate_cycle(chip8_t * chip8) {
           }
         }
       }
+      chip8->draw = true;
       break;
     case 0xE000:
       if (chip8->inst.NN == 0x9E) {

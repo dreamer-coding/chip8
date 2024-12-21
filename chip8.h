@@ -4,7 +4,10 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
-
+typedef enum {
+    QUIT,
+    RUNNING
+}chip8_state_t;
 
 typedef struct{
     uint16_t opcode;
@@ -29,6 +32,8 @@ typedef struct{
     unsigned char dt;
     unsigned char st;
     uint16_t carry_flag;
+    bool draw;
+    chip8_state_t state;
     instruction_t inst;
 }chip8_t;
 
@@ -38,14 +43,11 @@ typedef struct{
     SDL_Rect  *rect;
 }graphic_t;
 
-
-
 void chip8_init(chip8_t *chip8);
-void emulate_cycle(chip8_t *chip8);
-//void emulate_cycle(chip8_t *chip8);
-//void chip8_init(chip8_t *chip8);
+void emulate_cycle(graphic_t *sdl,chip8_t *chip8);
 void init_sdl(graphic_t *sdl);
-//int destroy_sdl(graphic_t *sdl);
-
+int destroy_sdl(graphic_t *sdl);
+void update_screen(graphic_t *sdl,chip8_t *chip8);
+void delay_timer();
 
 #endif
