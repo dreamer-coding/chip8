@@ -33,7 +33,7 @@ void init_sdl(graphic_t *sdl) {
     printf("SDL could not be initalized! SDL_ERROR: %s\n", SDL_GetError());
   } else {
 
-    sdl->window = SDL_CreateWindow("CHIP8", 0, 0, 640, 320, 0);
+    sdl->window = SDL_CreateWindow("CHIP8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, SDL_WINDOW_SHOWN);
     if (sdl->window == NULL) {
       printf("Window could not be created: %s\n", SDL_GetError());
 
