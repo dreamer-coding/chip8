@@ -15,30 +15,32 @@ int main(int argc, char *argv[]){
     bool running = true;
 
     SDL_Event chip8_event;
-
-           while(running){
-                    while(SDL_PollEvent(&chip8_event)){
+    
+    while(running){
+        while(SDL_PollEvent(&chip8_event)){
 
             if(chip8_event.type == SDL_QUIT){
                 running = false;
             }
-     
-                emulate_cycle(&window,&chip8); 
-
-                if(chip8.draw == true){
-
-                    update_screen(&window,&chip8);
-                    chip8.draw = false;
-                }
-
-                delay_timer();
+            
+            emulate_cycle(&window,&chip8); 
+            if(chip8.draw == true){
+                printf("printing\n");
+                update_screen(&window,&chip8);
+                chip8.draw = false;
             }
+            else{
+                printf("not working\n");
+            }
+
+           // delay_timer();
+        }
 
     }
 
-    
 
-    destroy_sdl(&window);
+
+//    destroy_sdl(&window);
     return 0;
 }
 

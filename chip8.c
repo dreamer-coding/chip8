@@ -52,7 +52,7 @@ void init_sdl(graphic_t *sdl) {
 
 void update_screen(graphic_t *sdl,chip8_t *chip8){
 
-    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 0);
+    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
     SDL_RenderClear(sdl->renderer);
 
     SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
@@ -60,7 +60,7 @@ void update_screen(graphic_t *sdl,chip8_t *chip8){
     for(int y=0; y < 32; y++){
         for(int x = 0; x < 64; x++){
             if(chip8->display[x][y] == 1){
-                SDL_Rect r = { 
+                SDL_Rect r = {
                     x * 10,
                     y * 10,
                     10,
@@ -78,7 +78,25 @@ void update_screen(graphic_t *sdl,chip8_t *chip8){
 }
 
 
-  int destroy_sdl(graphic_t * window) {
+void test_screen_update(graphic_t *sdl, chip8_t *chip8){
+
+     SDL_SetRenderDrawColor(sdl->renderer,0 , 0, 0, 255);
+     SDL_RenderClear(sdl->renderer);
+
+     SDL_SetRenderDrawColor(sdl->renderer,255,255,255,255);
+
+     SDL_Rect r = {10,10,10,10};
+
+     SDL_RenderFillRect(sdl->renderer,&r);
+
+     SDL_RenderPresent(sdl->renderer);
+
+     SDL_Delay(400);
+
+}
+
+
+int destroy_sdl(graphic_t * window) {
     SDL_DestroyWindow(window->window);
     SDL_Quit();
     return 0;
@@ -102,6 +120,7 @@ void delay_timer(){
     FILE *rom = fopen(chip8->rom, "rb"); // load the rom
     uint16_t entry_point = 0x200;
     chip8->stack_ptr = chip8->stack;
+    chip8->PC = entry_point;
 
     if (!rom) {
       fprintf(stdout, "Error Openning rom or rom file not exists %s\n",
@@ -120,6 +139,14 @@ void delay_timer(){
     memcpy(&chip8->ram[0x50], font, 0x09F - 0x050); // load the fontset
 }
 
+void debug_info(chip8_t *chip8){
+    
+    printf("opcode %x\n",chip8->inst.opcode);
+    printf("Current PC: %4x\n", chip8->PC);
+
+}
+
+        
   // Emulate the chip8 cycle
 void emulate_cycle(graphic_t *sdl,chip8_t * chip8) {
 
@@ -136,211 +163,212 @@ void emulate_cycle(graphic_t *sdl,chip8_t * chip8) {
     chip8->inst.NN = (chip8->inst.opcode & 0x00FF);
     chip8->inst.NNN = (chip8->inst.opcode & 0x0FFF);
 
+    debug_info(chip8);
+
     switch (chip8->inst.opcode & 0xF000) {
-    default:
-      break;
-    case 0x0000:
-      switch (chip8->inst.opcode & 0x00FF) {
-      case 0xEE:
-        chip8->PC = *(chip8->stack_ptr - 1);
-        break;
-      case 0xE0:
-        memset(chip8->display, false, sizeof chip8->display);
-        break;
-      }
-      break;
-
-    case 0x1000:
-      chip8->PC = chip8->inst.NNN;
-      break;
-    case 0x2000:
-      if(chip8->stack_ptr < chip8->stack + sizeof chip8->stack -1){
-          *chip8->stack_ptr++ = chip8->PC;
-          chip8->PC = chip8->inst.NNN;
-      }
-      else{
-        printf("Stackoverflow\n"); 
-      }
-            break;
-    case 0x3000:
-      if (chip8->V[chip8->inst.X] == chip8->inst.NN) {
-        chip8->PC += 2;
-      }
-      break;
-    case 0x4000:
-      if (chip8->V[chip8->inst.X] != chip8->inst.NN) {
-        chip8->PC += 2;
-      }
-      break;
-    case 0x5000:
-      if (chip8->V[chip8->inst.X] == chip8->inst.Y) {
-        chip8->PC += 2;
-      }
-      break;
-    case 0x6000:
-      chip8->V[chip8->inst.X] = chip8->inst.NN;
-      break;
-    case 0x7000:
-      chip8->V[chip8->inst.X] += chip8->inst.NN;
-      break;
-    case 0x8000:
-      switch (chip8->inst.opcode & 0x000F) {
-      case 0:
-        chip8->V[chip8->inst.X] = chip8->V[chip8->inst.Y];
-        break;
-      case 1:
-        chip8->V[chip8->inst.X] =
-            (chip8->V[chip8->inst.X] | chip8->V[chip8->inst.Y]);
-        break;
-      case 2:
-        chip8->V[chip8->inst.X] =
-            (chip8->V[chip8->inst.X] & chip8->V[chip8->inst.Y]);
-        break;
-      case 3:
-        chip8->V[chip8->inst.X] =
-            (chip8->V[chip8->inst.X] ^ chip8->V[chip8->inst.Y]);
-        break;
-      case 4:
-        chip8->carry_flag = (uint16_t)((chip8->V[chip8->inst.X] +
-                                        chip8->V[chip8->inst.Y]) > 255);
-        chip8->V[chip8->inst.X] =
-            (chip8->V[chip8->inst.X] + chip8->V[chip8->inst.Y]) & 0x00FF;
-        chip8->V[0xF] = chip8->carry_flag;
-        break;
-      case 5:
-        chip8->carry_flag =
-            (uint16_t)(chip8->V[chip8->inst.X] > chip8->V[chip8->inst.Y]);
-        chip8->V[chip8->inst.X] -= chip8->V[chip8->inst.Y];
-        chip8->V[0xF] = chip8->carry_flag;
-        break;
-      case 6:
-        chip8->V[0xF] = chip8->V[chip8->inst.X] & 1;
-        chip8->V[chip8->inst.X] >>= 1;
-        break;
-      case 7:
-        chip8->V[chip8->inst.X] =
-            chip8->V[chip8->inst.Y] - chip8->V[chip8->inst.X];
-        chip8->carry_flag =
-            (uint16_t)(chip8->V[chip8->inst.Y] >= chip8->V[chip8->inst.X]);
-        chip8->V[0xF] = chip8->carry_flag;
-        break;
-      case 0xE:
-        chip8->V[0xF] = chip8->V[chip8->inst.X] >> 7;
-        chip8->V[chip8->inst.X] <<= 1;
-        break;
-      }
-      break;
-    case 0x9000:
-      if (chip8->V[chip8->inst.X] != chip8->V[chip8->inst.Y]) {
-        chip8->PC += 2;
-      }
-      break;
-    case 0xA000:
-      chip8->I = chip8->inst.NNN;
-      break;
-    case 0xB000:
-      chip8->PC = chip8->inst.NNN + chip8->V[0x0];
-      break;
-    case 0xC000:
-      chip8->V[chip8->inst.X] = (rand() % 255 + 0) & chip8->inst.NN;
-      break;
-    case 0xD000:
-      uint8_t x = chip8->V[chip8->inst.X] % 64;
-      uint8_t y = chip8->V[chip8->inst.Y] % 32;
-      uint8_t height = chip8->inst.N;
-      uint8_t pixel;
-
-      chip8->V[0xF] = 0;
-
-      for (int row = 0; row < height; row++) {
-        pixel = chip8->ram[chip8->I + row];
-
-        for (int col = 0; col < 8; col++) {
-          if ((pixel & (0x80 >> col)) != 0) {
-            int index = (x + col) + ((y + row) * 64);
-
-            if (chip8->display[x + col][y + row] == 1) {
-              chip8->V[0xF] = 1;
+        case 0x0000:
+            switch (chip8->inst.opcode & 0x00FF) {
+                case 0xEE:
+                    chip8->PC = *(chip8->stack_ptr - 1);
+                    break;
+                case 0xE0:
+                    memset(chip8->display, false, sizeof chip8->display);
+                    break;
             }
-
-            chip8->display[x + col][y + row] ^= 1;
-          }
-        }
-      }
-      chip8->draw = true;
-      break;
-    case 0xE000:
-      if (chip8->inst.NN == 0x9E) {
-        if (chip8->keypad[chip8->V[chip8->inst.X]]) {
-          chip8->PC += 2;
-        }
-      } else if (chip8->inst.NN == 0xA1) {
-        if (!chip8->keypad[chip8->V[chip8->inst.X]]) {
-          chip8->PC += 2;
-        }
-      }
-      break;
-    case 0xF000:
-      static bool key_pressed = false;
-      switch (chip8->inst.NN) {
-      case 0x07:
-        chip8->V[chip8->inst.X] = chip8->dt;
-        break;
-      case 0x0A:
-        for (int i = 0; i < sizeof chip8->keypad; i++) {
-          if (chip8->keypad[i]) {
-            key_pressed = true;
-            chip8->V[chip8->inst.X] = i;
             break;
-          }
-        }
-        if (!key_pressed) {
-          chip8->PC -= 2;
-        }
-        break;
-      case 0x15:
-        chip8->dt = chip8->V[chip8->inst.X];
-        break;
-      case 0x18:
-        chip8->st = chip8->V[chip8->inst.X];
-        break;
-      case 0x1E:
-        chip8->I += chip8->V[chip8->inst.X];
-        break;
-      case 0x29:
-        chip8->I += chip8->V[chip8->inst.X] * 5;
-        break;
-      case 0x33:
-        uint16_t bcd_value = chip8->V[chip8->inst.X];
-        uint16_t bcd = 0;
-        int shift = 0;
 
-        while (bcd_value > 0) {
-          bcd |= (bcd_value % 10) << (shift++ << 2);
-          bcd /= 10;
-        }
+        case 0x1000:
+            chip8->PC = chip8->inst.NNN;
+            break;
+        case 0x2000:
+            if(chip8->stack_ptr < chip8->stack + sizeof chip8->stack -1){
+                *chip8->stack_ptr++ = chip8->PC;
+                chip8->PC = chip8->inst.NNN;
+            }
+            else{
+                printf("Stackoverflow\n");
+            }
+            break;
+        case 0x3000:
+            if (chip8->V[chip8->inst.X] == chip8->inst.NN) {
+                chip8->PC += 2;
+            }
+            break;
+        case 0x4000:
+            if (chip8->V[chip8->inst.X] != chip8->inst.NN) {
+                chip8->PC += 2;
+            }
+            break;
+        case 0x5000:
+            if (chip8->V[chip8->inst.X] == chip8->inst.Y) {
+                chip8->PC += 2;
+            }
+            break;
+        case 0x6000:
+            chip8->V[chip8->inst.X] = chip8->inst.NN;
+            break;
+        case 0x7000:
+            chip8->V[chip8->inst.X] += chip8->inst.NN;
+            break;
+        case 0x8000:
+            switch (chip8->inst.opcode & 0x000F) {
+                case 0:
+                    chip8->V[chip8->inst.X] = chip8->V[chip8->inst.Y];
+                    break;
+                case 1:
+                    chip8->V[chip8->inst.X] =
+                        (chip8->V[chip8->inst.X] | chip8->V[chip8->inst.Y]);
+                    break;
+                case 2:
+                    chip8->V[chip8->inst.X] =
+                        (chip8->V[chip8->inst.X] & chip8->V[chip8->inst.Y]);
+                    break;
+                case 3:
+                    chip8->V[chip8->inst.X] =
+                        (chip8->V[chip8->inst.X] ^ chip8->V[chip8->inst.Y]);
+                    break;
+                case 4:
+                    chip8->carry_flag = (uint16_t)((chip8->V[chip8->inst.X] +
+                                chip8->V[chip8->inst.Y]) > 255);
+                    chip8->V[chip8->inst.X] =
+                        (chip8->V[chip8->inst.X] + chip8->V[chip8->inst.Y]) & 0x00FF;
+                    chip8->V[0xF] = chip8->carry_flag;
+                    break;
+                case 5:
+                    chip8->carry_flag =
+                        (uint16_t)(chip8->V[chip8->inst.X] > chip8->V[chip8->inst.Y]);
+                    chip8->V[chip8->inst.X] -= chip8->V[chip8->inst.Y];
+                    chip8->V[0xF] = chip8->carry_flag;
+                    break;
+                case 6:
+                    chip8->V[0xF] = chip8->V[chip8->inst.X] & 1;
+                    chip8->V[chip8->inst.X] >>= 1;
+                    break;
+                case 7:
+                    chip8->V[chip8->inst.X] =
+                        chip8->V[chip8->inst.Y] - chip8->V[chip8->inst.X];
+                    chip8->carry_flag =
+                        (uint16_t)(chip8->V[chip8->inst.Y] >= chip8->V[chip8->inst.X]);
+                    chip8->V[0xF] = chip8->carry_flag;
+                    break;
+                case 0xE:
+                    chip8->V[0xF] = chip8->V[chip8->inst.X] >> 7;
+                    chip8->V[chip8->inst.X] <<= 1;
+                    break;
+            }
+            break;
+        case 0x9000:
+            if (chip8->V[chip8->inst.X] != chip8->V[chip8->inst.Y]) {
+                chip8->PC += 2;
+            }
+            break;
+        case 0xA000:
+            chip8->I = chip8->inst.NNN;
+            break;
+        case 0xB000:
+            chip8->PC = chip8->inst.NNN + chip8->V[0x0];
+            break;
+        case 0xC000:
+            chip8->V[chip8->inst.X] = (rand() % 255 + 0) & chip8->inst.NN;
+            break;
+        case 0xD000:
+            uint8_t x = chip8->V[chip8->inst.X] % 64;
+            uint8_t y = chip8->V[chip8->inst.Y] % 32;
+            uint8_t height = chip8->inst.N;
+            uint8_t pixel;
 
-        chip8->ram[chip8->I + 2] = bcd % 10;
-        bcd /= 10;
-        chip8->ram[chip8->I + 1] = bcd % 10;
-        bcd /= 10;
-        chip8->ram[chip8->I] = bcd;
+            chip8->V[0xF] = 0;
 
-        break;
-      case 0x55:
-        for (uint8_t i = 0; i <= chip8->inst.X; i++) {
-          chip8->ram[chip8->I++] = chip8->V[i];
-        }
+            for (int row = 0; row < height; row++) {
+                pixel = chip8->ram[chip8->I + row];
 
-        break;
+                for (int col = 0; col < 8; col++) {
+                    if ((pixel & (0x80 >> col)) != 0) {
+                        int index = (x + col) + ((y + row) * 64);
 
-      case 0x65:
-        for (uint8_t i = 0; i <= chip8->inst.X; i++) {
-          chip8->V[i] = chip8->ram[chip8->I++];
-        }
+                        if (chip8->display[x + col][y + row] == 1) {
+                            chip8->V[0xF] = 1;
+                        }
 
-        break;
-      }
+                        chip8->display[x + col][y + row] ^= 1;
+                    }
+                }
+            }
+            chip8->draw = true;
+            break;
+        case 0xE000:
+            if (chip8->inst.NN == 0x9E) {
+                if (chip8->keypad[chip8->V[chip8->inst.X]]) {
+                    chip8->PC += 2;
+                }
+            } else if (chip8->inst.NN == 0xA1) {
+                if (!chip8->keypad[chip8->V[chip8->inst.X]]) {
+                    chip8->PC += 2;
+                }
+            }
+            break;
+        case 0xF000:
+            static bool key_pressed = false;
+            switch (chip8->inst.NN) {
+                case 0x07:
+                    chip8->V[chip8->inst.X] = chip8->dt;
+                    break;
+                case 0x0A:
+                    for (int i = 0; i < sizeof chip8->keypad; i++) {
+                        if (chip8->keypad[i]) {
+                            key_pressed = true;
+                            chip8->V[chip8->inst.X] = i;
+                            break;
+                        }
+                    }
+                    if (!key_pressed) {
+                        chip8->PC -= 2;
+                    }
+                    break;
+                case 0x15:
+                    chip8->dt = chip8->V[chip8->inst.X];
+                    break;
+                case 0x18:
+                    chip8->st = chip8->V[chip8->inst.X];
+                    break;
+                case 0x1E:
+                    chip8->I += chip8->V[chip8->inst.X];
+                    break;
+                case 0x29:
+                    chip8->I += chip8->V[chip8->inst.X] * 5;
+                    break;
+                case 0x33:
+                    uint16_t bcd_value = chip8->V[chip8->inst.X];
+                    uint16_t bcd = 0;
+                    int shift = 0;
+
+                    while (bcd_value > 0) {
+                        bcd |= (bcd_value % 10) << (shift++ << 2);
+                        bcd /= 10;
+                    }
+
+                    chip8->ram[chip8->I + 2] = bcd % 10;
+                    bcd /= 10;
+                    chip8->ram[chip8->I + 1] = bcd % 10;
+                    bcd /= 10;
+                    chip8->ram[chip8->I] = bcd;
+
+                    break;
+                case 0x55:
+                    for (uint8_t i = 0; i <= chip8->inst.X; i++) {
+                        chip8->ram[chip8->I++] = chip8->V[i];
+                    }
+
+                    break;
+
+                case 0x65:
+                    for (uint8_t i = 0; i <= chip8->inst.X; i++) {
+                        chip8->V[i] = chip8->ram[chip8->I++];
+                    }
+
+                    break;
+            }
+        default:
+            break;
     }
 }
-

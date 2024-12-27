@@ -49,5 +49,6 @@ void init_sdl(graphic_t *sdl);
 int destroy_sdl(graphic_t *sdl);
 void update_screen(graphic_t *sdl,chip8_t *chip8);
 void delay_timer();
+void test_screen_update(graphic_t *sdl, chip8_t *chip8);
 
 #endif
