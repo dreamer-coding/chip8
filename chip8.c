@@ -44,13 +44,13 @@ void audio_callback(void *userdata, uint8_t *stream, int len) {
 }
 
 
-void init_sdl(graphic_t *sdl) {
+void init_sdl(graphic_t *sdl,chip8_t *chip8) {
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         printf("SDL could not be initalized! SDL_ERROR: %s\n", SDL_GetError());
     } else {
 
-        sdl->window = SDL_CreateWindow("CHIP8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, SDL_WINDOW_SHOWN);
+        sdl->window = SDL_CreateWindow("CHIP8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 64 * chip8->pixel_scale, 32 * chip8->pixel_scale, SDL_WINDOW_SHOWN);
         if (sdl->window == NULL) {
             printf("Window could not be created: %s\n", SDL_GetError());
 
@@ -101,10 +101,10 @@ void update_screen(graphic_t *sdl,chip8_t *chip8){
         for(int x = 0; x < 64; x++){
             if(chip8->display[x][y] == 1){
                 SDL_Rect r = {
-                    x * 10,
-                    y * 10,
-                    10,
-                    10,
+                    x * chip8->pixel_scale,
+                    y * chip8->pixel_scale,
+                    chip8->pixel_scale,
+                    chip8->pixel_scale,
                 };
 
                 SDL_RenderFillRect(sdl->renderer, &r);
@@ -131,45 +131,45 @@ void handle_input(chip8_t *chip8){
                     case SDLK_ESCAPE:
                         chip8->state = QUIT;
                         break;
-                    case SDLK_1:chip8->keypad[0x1] = 1; break;
-                    case SDLK_2:chip8->keypad[0x2] = 1; break;
-                    case SDLK_3:chip8->keypad[0x3] = 1; break;
-                    case SDLK_4:chip8->keypad[0xc] = 1; break;
+                    case SDLK_1:chip8->keypad[0x1] = true; break;
+                    case SDLK_2:chip8->keypad[0x2] = true; break;
+                    case SDLK_3:chip8->keypad[0x3] = true; break;
+                    case SDLK_4:chip8->keypad[0xc] = true; break;
 
-                    case SDLK_q:chip8->keypad[0x4] = 1; break;
-                    case SDLK_w:chip8->keypad[0x5] = 1; break;
-                    case SDLK_e:chip8->keypad[0x6] = 1; break;
-                    case SDLK_r:chip8->keypad[0xd] = 1; break;
+                    case SDLK_q:chip8->keypad[0x4] = true; break;
+                    case SDLK_w:chip8->keypad[0x5] = true; break;
+                    case SDLK_e:chip8->keypad[0x6] = true; break;
+                    case SDLK_r:chip8->keypad[0xd] = true; break;
 
-                    case SDLK_a:chip8->keypad[0x7] = 1; break;
-                    case SDLK_s:chip8->keypad[0x8] = 1; break;
-                    case SDLK_d:chip8->keypad[0x9] = 1; break;
-                    case SDLK_f:chip8->keypad[0xe] = 1; break;
+                    case SDLK_a:chip8->keypad[0x7] = true; break;
+                    case SDLK_s:chip8->keypad[0x8] = true; break;
+                    case SDLK_d:chip8->keypad[0x9] = true; break;
+                    case SDLK_f:chip8->keypad[0xe] = true; break;
                                 
-                    case SDLK_z:chip8->keypad[0xa] = 1; break;
-                    case SDLK_x:chip8->keypad[0x0] = 1; break;
-                    case SDLK_c:chip8->keypad[0xb] = 1; break;
-                    case SDLK_v:chip8->keypad[0xf] = 1; break;
+                    case SDLK_z:chip8->keypad[0xa] = true; break;
+                    case SDLK_x:chip8->keypad[0x0] = true; break;
+                    case SDLK_c:chip8->keypad[0xb] = true; break;
+                    case SDLK_v:chip8->keypad[0xf] = true; break;
                     
                     default: break;
                 }
                 break;
             case SDL_KEYUP:
                 switch(event.key.keysym.sym){
-                    case SDLK_1:chip8->keypad[0x1] = 0; break;
-                    case SDLK_2:chip8->keypad[0x2] = 0; break;
-                    case SDLK_3:chip8->keypad[0x3] = 0; break;
-                    case SDLK_4:chip8->keypad[0xc] = 0; break;
+                    case SDLK_1:chip8->keypad[0x1] = false; break;
+                    case SDLK_2:chip8->keypad[0x2] = false; break;
+                    case SDLK_3:chip8->keypad[0x3] = false; break;
+                    case SDLK_4:chip8->keypad[0xc] = false; break;
 
-                    case SDLK_q:chip8->keypad[0x4] = 0; break;
-                    case SDLK_w:chip8->keypad[0x5] = 0; break;
-                    case SDLK_e:chip8->keypad[0x6] = 0; break;
-                    case SDLK_r:chip8->keypad[0xd] = 0; break;
+                    case SDLK_q:chip8->keypad[0x4] = false; break;
+                    case SDLK_w:chip8->keypad[0x5] = false; break;
+                    case SDLK_e:chip8->keypad[0x6] = false; break;
+                    case SDLK_r:chip8->keypad[0xd] = false; break;
 
-                    case SDLK_a:chip8->keypad[0x7] = 0; break;
-                    case SDLK_s:chip8->keypad[0x8] = 0; break;
-                    case SDLK_d:chip8->keypad[0x9] = 0; break;
-                    case SDLK_f:chip8->keypad[0xe] = 0; break;
+                    case SDLK_a:chip8->keypad[0x7] = false; break;
+                    case SDLK_s:chip8->keypad[0x8] = false; break;
+                    case SDLK_d:chip8->keypad[0x9] = false; break;
+                    case SDLK_f:chip8->keypad[0xe] = false; break;
 
                     case SDLK_z:chip8->keypad[0xa] = 0; break;
                     case SDLK_x:chip8->keypad[0x0] = 0; break;
@@ -213,6 +213,8 @@ void update_timers(graphic_t sdl,chip8_t *chip8){
     chip8->stack_ptr = chip8->stack;
     chip8->PC = entry_point;
     chip8->state = RUNNING;
+    chip8->pixel_scale = 20;
+    chip8->last_key = 0xFF;
 
     if (!rom) {
       fprintf(stdout, "Error Openning rom or rom file not exists %s\n",
@@ -411,29 +413,31 @@ void emulate_cycle(chip8_t * chip8) {
                     chip8->V[chip8->inst.X] = chip8->delay_timer;
                     break;
                 case 0x0A:
-                    printf("fx0a\n");
-                    static bool key_pressed = false;
-                    chip8->last_key = -1 ;
-                    for(int i = 0 ; i < sizeof chip8->keypad ; i++){
-                        if(chip8->keypad[i]){
-                            chip8->keypad[i] = i;
-                            chip8->last_key = i;
-                            key_pressed = true;
+                    if(chip8->last_key == 0xFF){
+                            // no pressed key registered yet, look for one
+                            for (int i = 0; i < 16; i++) {
+                                if (chip8->keypad[i]) {
+                                    // found one
+                                    chip8->last_key = i;
+                                    break;
+                                }
+                            }
+                            chip8->PC -= 2;
                         }
-                    }
-                    if(!key_pressed){
-                        chip8->PC -= 2;
-                    }
-                    else{
-                        if(!chip8->keypad[chip8->last_key]){
-                            chip8->V[chip8->inst.X] = chip8->last_key;
-                            chip8->last_key = 0xFF;
-                            key_pressed = false;
-
+                        else {
+                            // last_key is set, check if it was released
+                            if(!chip8->keypad[chip8->last_key]){
+                                // it was released, we are done
+                                chip8->V[chip8->inst.X] = chip8->last_key;
+                                chip8->last_key = 0xFF;
+                            }
+                            else {
+                                // not yet, keep waiting
+                                chip8->PC -= 2; 
+                            }
                         }
-                    }
-            
-                    break;
+                    
+            break;
                 case 0x15:
                     chip8->delay_timer = chip8->V[chip8->inst.X];
                     break;
@@ -449,16 +453,17 @@ void emulate_cycle(chip8_t * chip8) {
                 case 0x33:
                     chip8->ram[chip8->I + 2] = chip8->V[chip8->inst.X] % 10;
                     chip8->ram[chip8->I + 1] = (chip8->V[chip8->inst.X] / 10 ) % 10;
-                    chip8->ram[chip8->I] = chip8->V[chip8->inst.X] / 100; break; case 0x55: for (uint8_t i = 0; i <= chip8->inst.X; i++) { chip8->ram[chip8->I++] = chip8->V[i];
+                    chip8->ram[chip8->I] = chip8->V[chip8->inst.X] / 100;
+                    break; 
+                case 0x55: 
+                    for (uint8_t i = 0; i <= chip8->inst.X; i++) { 
+                        chip8->ram[chip8->I++] = chip8->V[i];
                     }
-
                     break;
-
                 case 0x65:
                     for (uint8_t i = 0; i <= chip8->inst.X; i++) {
                         chip8->V[i] = chip8->ram[chip8->I++];
                     }
-
                     break;
             }
         default:

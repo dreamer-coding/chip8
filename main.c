@@ -10,7 +10,7 @@ int main(int argc, char *argv[]){
     chip8.rom = argv[1]; 
     chip8_init(&chip8);
     graphic_t window;
-    init_sdl(&window);
+    init_sdl(&window,&chip8);
 
     bool running = true;
 

@@ -31,6 +31,7 @@ typedef struct{
     const char *rom;
     uint16_t carry_flag;
     uint8_t last_key;
+    uint8_t pixel_scale;
     bool draw;
     uint8_t delay_timer;
     uint8_t sound_timer;
@@ -47,7 +48,7 @@ typedef struct{
 
 void chip8_init(chip8_t *chip8);
 void emulate_cycle(chip8_t *chip8);
-void init_sdl(graphic_t *sdl);
+void init_sdl(graphic_t *sdl,chip8_t *chip8);
 int destroy_sdl(graphic_t *sdl);
 void update_screen(graphic_t *sdl,chip8_t *chip8);
 void delay_timer();
