@@ -40,7 +40,8 @@ typedef struct{
 typedef struct{
     SDL_Window *window;
     SDL_Renderer *renderer;
-    SDL_Rect  *rect;
+    SDL_AudioSpec want, have;
+    SDL_AudioDeviceID dev;    
 }graphic_t;
 
 void chip8_init(chip8_t *chip8);
@@ -50,5 +51,6 @@ int destroy_sdl(graphic_t *sdl);
 void update_screen(graphic_t *sdl,chip8_t *chip8);
 void delay_timer();
 void handle_input(chip8_t *chip8);
-
+void audio_callback(void *userdata, Uint8 *stream, int len);
+void update_timers(graphic_t sdl,chip8_t *chip8);
 #endif

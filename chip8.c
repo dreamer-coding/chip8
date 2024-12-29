@@ -8,6 +8,10 @@
 
 #include "chip8.h"
 
+#define SQUARE_WAVE_FREQ 440   
+#define AUDIO_SAMPLE_RATE 44100 
+#define VOLUME 3000   
+
 const uint8_t font[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -27,36 +31,70 @@ const uint8_t font[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
+void audio_callback(void *userdata, uint8_t *stream, int len) {
+
+    int16_t *audio_data = (int16_t *)stream;
+    static uint32_t running_sample_index = 0;
+    const int32_t square_wave_period = AUDIO_SAMPLE_RATE / SQUARE_WAVE_FREQ;
+    const int32_t half_square_wave_period = square_wave_period / 2;
+    for (int i = 0; i < len / 2; i++)
+        audio_data[i] = ((running_sample_index++ / half_square_wave_period) % 2) ? 
+            VOLUME: 
+            -VOLUME;
+}
+
+
 void init_sdl(graphic_t *sdl) {
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
-    printf("SDL could not be initalized! SDL_ERROR: %s\n", SDL_GetError());
-  } else {
-
-    sdl->window = SDL_CreateWindow("CHIP8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, SDL_WINDOW_SHOWN);
-    if (sdl->window == NULL) {
-      printf("Window could not be created: %s\n", SDL_GetError());
-
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+        printf("SDL could not be initalized! SDL_ERROR: %s\n", SDL_GetError());
     } else {
 
-      sdl->renderer =
-          SDL_CreateRenderer(sdl->window, -1, SDL_RENDERER_ACCELERATED);
-      if (!sdl->renderer) {
-        printf("Could not create renderer:%s\n", SDL_GetError());
-      }
+        sdl->window = SDL_CreateWindow("CHIP8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, SDL_WINDOW_SHOWN);
+        if (sdl->window == NULL) {
+            printf("Window could not be created: %s\n", SDL_GetError());
+
+        } else {
+
+            sdl->renderer =
+                SDL_CreateRenderer(sdl->window, -1, SDL_RENDERER_ACCELERATED);
+            if (!sdl->renderer) {
+                printf("Could not create renderer:%s\n", SDL_GetError());
+            }
+        }
+
     }
 
-     }
+    // Init Audio stuff
+    sdl->want = (SDL_AudioSpec){
+        .freq = 44100,          // 44100hz "CD" quality
+            .format = AUDIO_S16SYS, // Signed 16 bit little endian
+            .channels = 1,          // Mono, 1 channel
+            .samples = 4096,
+            .callback = audio_callback,
+            .userdata = NULL,
+    };
 
+    sdl->dev = SDL_OpenAudioDevice(NULL, 0, &sdl->want, &sdl->have, 0);
+
+    if (sdl->dev == 0) {
+        SDL_Log("Could not get an Audio Device %s\n", SDL_GetError());
+    }
+
+    if ((sdl->want.format != sdl->have.format) ||
+            (sdl->want.channels != sdl->have.channels)) {
+
+        SDL_Log("Could not get desired Audio Spec\n");
+    }
+
+   
+}
+
+void update_screen(graphic_t *sdl,chip8_t *chip8){
     SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
     SDL_RenderClear(sdl->renderer);
 
     SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
-
-}
-
-
-void update_screen(graphic_t *sdl,chip8_t *chip8){
 
 
     for(int y=0; y < 32; y++){
@@ -121,9 +159,6 @@ void handle_input(chip8_t *chip8){
                 break;
             case SDL_KEYUP:
                 switch(event.key.keysym.sym){
-                    case SDLK_ESCAPE:
-                        chip8->state = QUIT;
-                        break;
                     case SDLK_1:chip8->keypad[0x1] = 0; break;
                     case SDLK_2:chip8->keypad[0x2] = 0; break;
                     case SDLK_3:chip8->keypad[0x3] = 0; break;
@@ -143,9 +178,7 @@ void handle_input(chip8_t *chip8){
                     case SDLK_x:chip8->keypad[0x0] = 0; break;
                     case SDLK_c:chip8->keypad[0xb] = 0; break;
                     case SDLK_v:chip8->keypad[0xf] = 0; break;
-                    
-                    default:
-                                break;
+                    default:break;
                 }
                 break;
 
@@ -162,23 +195,15 @@ int destroy_sdl(graphic_t * window) {
     return 0;
 }
 
-void delay_timer(){
-    static Uint64 last_time = 0;
-    Uint64 current_time = SDL_GetTicks();
-    Uint64 frame_time = 1000 / 60;
-
-    if(current_time - last_time < frame_time){
-        SDL_Delay(frame_time - (current_time - last_time));
-    }
-    last_time = SDL_GetTicks();
-
-}
-
-void update_timers(chip8_t *chip8){
+void update_timers(graphic_t sdl,chip8_t *chip8){
     if(chip8->delay_timer > 0) 
         chip8->delay_timer--;
-    if(chip8->sound_timer > 0){
-    }
+    if (chip8->sound_timer > 0) {
+        chip8->sound_timer--;
+        SDL_PauseAudioDevice(sdl.dev, 0); 
+    } else {
+        SDL_PauseAudioDevice(sdl.dev, 1);
+    } 
         
 }
 // Init chip8 data
@@ -378,16 +403,16 @@ void emulate_cycle(chip8_t * chip8) {
             }
             break;
         case 0x0F:
-            static bool key_pressed = false;
+            bool key_pressed = false;
             switch (chip8->inst.NN) {
                 case 0x07:
                     chip8->V[chip8->inst.X] = chip8->delay_timer;
                     break;
                 case 0x0A:
-                    for (int i = 0; i < sizeof chip8->keypad; i++) {
+                    for (int i = 0; i < 16; i++) {
                         if (chip8->keypad[i]) {
-                            key_pressed = true;
                             chip8->V[chip8->inst.X] = i;
+                            key_pressed = false;
                             break;
                         }
                     }
