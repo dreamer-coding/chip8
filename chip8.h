@@ -30,6 +30,7 @@ typedef struct{
     uint16_t keypad[16];
     const char *rom;
     uint16_t carry_flag;
+    uint8_t last_key;
     bool draw;
     uint8_t delay_timer;
     uint8_t sound_timer;
