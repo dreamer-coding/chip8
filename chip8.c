@@ -290,7 +290,7 @@ void emulate_cycle(chip8_t * chip8) {
             }
             break;
         case 0x05:
-            if (chip8->V[chip8->inst.X] == chip8->inst.Y) {
+            if (chip8->V[chip8->inst.X] == chip8->V[chip8->inst.Y]) {
                 chip8->PC += 2;
             }
             break;
