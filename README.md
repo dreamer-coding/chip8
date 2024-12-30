@@ -1,2 +1,2 @@
 # usage: #
-make and run `./chip8 <romfile>`
+make and run `./output <romfile>`
