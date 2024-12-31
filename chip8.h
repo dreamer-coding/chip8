@@ -49,6 +49,7 @@ typedef struct{
 void chip8_init(chip8_t *chip8);
 void emulate_cycle(chip8_t *chip8);
 void init_sdl(graphic_t *sdl,chip8_t *chip8);
+void clear_screen(graphic_t *sdl);
 int destroy_sdl(graphic_t *sdl);
 void update_screen(graphic_t *sdl,chip8_t *chip8);
 void delay_timer();

@@ -90,13 +90,15 @@ void init_sdl(graphic_t *sdl,chip8_t *chip8) {
    
 }
 
-void update_screen(graphic_t *sdl,chip8_t *chip8){
+void clear_screen(graphic_t *sdl){
     SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
     SDL_RenderClear(sdl->renderer);
+}
 
+
+void update_screen(graphic_t *sdl,chip8_t *chip8){
     SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
-
-
+    
     for(int y=0; y < 32; y++){
         for(int x = 0; x < 64; x++){
             if(chip8->display[x][y] == 1){
