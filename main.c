@@ -17,12 +17,10 @@ int main(int argc, char *argv[]){
     SDL_Event sdl_event;
     
     while(chip8.state != QUIT){
-
-        // Delay for approximately 60hz/60fps (16.67ms) or actual time elapsed
-
-        handle_input(&chip8); 
         
-    clear_screen(&window);
+        handle_input(&chip8); 
+
+        clear_screen(&window);
         const uint64_t start_frame_time = SDL_GetPerformanceCounter();
 
         for(uint32_t i = 0 ; i < 600 / 60 ; i++){
