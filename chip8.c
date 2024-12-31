@@ -12,7 +12,7 @@
 #define AUDIO_SAMPLE_RATE 44100 
 #define VOLUME 3000   
 
-const uint8_t font[80] = {
+const uint8_t font[] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -232,7 +232,7 @@ void update_timers(graphic_t sdl,chip8_t *chip8){
     }
     fclose(rom);
 
-    memcpy(&chip8->ram[0x50], font, 0x09F - 0x050); // load the fontset
+    memcpy(&chip8->ram[0x00], font, sizeof(font)); // load the fontset
 }
 
 void debug_info(chip8_t *chip8){
