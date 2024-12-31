@@ -312,12 +312,12 @@ void emulate_cycle(chip8_t * chip8) {
                     break;
                 case 2:
                     chip8->V[chip8->inst.X] =
-                        chip8->V[chip8->inst.X] & chip8->V[chip8->inst.Y];
+                        (chip8->V[chip8->inst.X] & chip8->V[chip8->inst.Y]);
                     chip8->V[0xF] = 0;
                     break;
                 case 3:
                     chip8->V[chip8->inst.X] =
-                        chip8->V[chip8->inst.X] ^ chip8->V[chip8->inst.Y];
+                        (chip8->V[chip8->inst.X] ^ chip8->V[chip8->inst.Y]);
                     chip8->V[0xF] = 0;
                     break;
                 case 4:
@@ -365,27 +365,29 @@ void emulate_cycle(chip8_t * chip8) {
             chip8->V[chip8->inst.X] = (rand() % 255 + 0) & chip8->inst.NN;
             break;
         case 0x0D:
-            uint8_t height = chip8->inst.N;
             uint8_t pixel;
+            uint8_t x = chip8->V[chip8->inst.X] % 64;
+            uint8_t y = chip8->V[chip8->inst.Y] % 32;
 
             chip8->V[0xF] = 0;
 
-            for (int row = 0; row < height; row++) {
-                uint8_t x = chip8->V[chip8->inst.X] % 64;
-                uint8_t y = chip8->V[chip8->inst.Y] % 32;
-                
-                if(x >= 64 || y >= 32) continue;
-                if((chip8->ram[chip8->I + row] ) < sizeof chip8->ram ){
-                pixel = chip8->ram[chip8->I + row];
+            for (int row = 0; row < chip8->inst.N; row++) {
+                if (y + row >= 32 || x >= 64) {
+                    continue;
                 }
-                else{
+
+                if ((chip8->ram[chip8->I + row]) < sizeof(chip8->ram)) {
+                    pixel = chip8->ram[chip8->I + row];
+                } else {
                     break;
                 }
 
                 for (int col = 0; col < 8; col++) {
-                    if ((pixel & (0x80 >> col)) != 0) {
-                        int index = (x + col) + ((y + row) * 64);
+                    if (x + col >= 64) {
+                        continue;
+                    }
 
+                    if ((pixel & (0x80 >> col)) != 0) {
                         if (chip8->display[x + col][y + row] == 1) {
                             chip8->V[0xF] = 1;
                         }
